@@ -1,9 +1,6 @@
-
-
 substitutions:
   _DEFAULT_PROFILE: prod
 steps:
-
   - name: maven:3.9.7-eclipse-temurin-21-alpine
     id: CI - Package the solution
     entrypoint: mvn
