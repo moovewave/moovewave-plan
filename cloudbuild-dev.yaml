@@ -1,0 +1,34 @@
+
+
+substitutions:
+  _DEFAULT_PROFILE: prod
+steps:
+
+  - name: maven:3.9.7-eclipse-temurin-21-alpine
+    id: CI - Package the solution
+    entrypoint: mvn
+    args: [ "package", "-DskipTests -Dquarkus.package.type=legacy-jar -Dquarkus.profile=dev" ]
+
+  - name: gcr.io/cloud-builders/docker
+    id: CI - Docker build image for dev environment
+    args: [ "build", "-t", "gcr.io/$PROJECT_ID/moovewave-plan-api:DEV", "." ]
+
+  - name: gcr.io/cloud-builders/docker
+    id: CI - Docker push image as WIP version on DEV environment
+    args: [ 'push', 'gcr.io/$PROJECT_ID/moovewave-plan-api:DEV' ]
+
+  # Deploy container image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: CD - Deploy the image to Cloud Run
+    entrypoint: gcloud
+    args: [ 'run', 'deploy', 'colimoove-core-api-dev',
+            '--image', 'gcr.io/$PROJECT_ID/moovewave-plan-api:DEV',
+            '--allow-unauthenticated',
+            '--region', 'europe-west9', # Paris region
+            '--cpu','4',
+            '--no-cpu-throttling', # Charged for the entire lifecycle of the container instance (consume cpu even if no request is received).
+            '--memory','8G',
+            '--port', '8080' ]
+
+images: [ "gcr.io/$PROJECT_ID/moovewave-plan-api:DEV" ]
+# [END cloudbuild_maven]
